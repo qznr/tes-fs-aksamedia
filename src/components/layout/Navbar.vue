@@ -83,7 +83,8 @@ const { logout, isAuthenticated } = useAuth();
 const router = useRouter();
 const { getItem } = useLocalStorage();
 
-const user = computed(() => getItem('user'));
+const user = ref(getItem('user'));
+
 const isMenuOpen = ref(false);
 
 const handleResize = () => {
