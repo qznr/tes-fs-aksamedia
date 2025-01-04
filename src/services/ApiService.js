@@ -67,8 +67,10 @@ export default {
 
   async updateEmployee(employeeId, employeeData) {
     try {
-      const response = await apiClient.put(`/employees/${employeeId}`, employeeData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      employeeData.append('_method', 'PUT');
+      
+      const response = await apiClient.post(`/employees/${employeeId}`, employeeData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       return response.data;
     } catch (error) {

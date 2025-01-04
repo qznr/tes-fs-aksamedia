@@ -7,19 +7,18 @@
     <template v-slot="{ form, updateField }">
       <!-- Mobile Form Fields -->
       <div>
-        <label
-          for="image"
-          class="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
-          >Image URL</label
-        >
-        <input
-          type="text"
-          id="image"
-          :value="form.image"
-          @input="updateField('image', $event.target.value)"
-          placeholder="https://i.pravatar.cc/100"
-          class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
-        />
+         <label
+              for="image"
+              class="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
+              >Image</label
+            >
+            <input
+              type="file"
+              id="image"
+              @change="handleImageChange($event, updateField)"
+              accept="image/*"
+              class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
+            />
       </div>
        <div>
         <label
@@ -59,15 +58,15 @@
         >
         <select
           id="division"
-          :value="form.division.name"
-          @input="updateField('division.name', $event.target.value)"
+           :value="form.division.id"
+          @input="updateField('division', $event.target.value)"
           class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
         >
           <option
             v-for="division in divisionOptions"
-            :key="division"
-            :value="division"
-            >{{ division }}</option
+            :key="division.id"
+            :value="division.id"
+            >{{ division.name }}</option
           >
         </select>
       </div>
@@ -99,7 +98,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue';
+import { defineProps, defineEmits, computed, ref } from 'vue';
 import UpdateDeleteForm from './common/UpdateDeleteForm.vue';
 
 const props = defineProps({
@@ -116,8 +115,18 @@ const props = defineProps({
 const emit = defineEmits(['update', 'delete']);
 
 const employeeFormInitialState = computed(() => {
-  return props.selectedEmployee ? { ...props.selectedEmployee } : {};
+    return props.selectedEmployee ? { 
+      ...props.selectedEmployee,
+      division: props.selectedEmployee.division ? props.selectedEmployee.division.id : null
+    } : {};
 });
+
+
+const handleImageChange = (event, updateField) => {
+    const file = event.target.files[0];
+    updateField('image', file);
+};
+
 
 const handleUpdate = (formData) => {
   emit('update', formData);

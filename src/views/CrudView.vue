@@ -8,7 +8,7 @@
       <!-- Mobile -->
       <template v-if="isMobile">
         <div class="w-full p-4">
-          <MobileCreateForm @create="createEmployee" :divisionOptions="divisionOptions"/>
+          <MobileCreateForm @create="createEmployee" :divisionOptions="divisionOptions" />
         </div>
 
         <div class="w-full p-4">
@@ -43,12 +43,13 @@
         </div>
 
         <div class="w-full p-4">
-          <MobileUpdateDeleteForm
-            :selectedEmployee="sharedSelectedItem"
-            :divisionOptions="divisionOptions"
-            @update="updateEmployee"
-            @delete="deleteEmployee"
-          />
+           <MobileUpdateDeleteForm
+              v-if="sharedSelectedItem"
+              :selectedEmployee="sharedSelectedItem"
+              :divisionOptions="divisionOptions"
+              @update="updateEmployee"
+              @delete="deleteEmployee"
+            />
         </div>
       </template>
 
@@ -87,11 +88,12 @@
         <div class="w-1/2 flex flex-col p-4 space-y-4">
           <!-- Top Right -->
           <div class="w-full p-4">
-            <TabletCreateForm @create="createEmployee" :divisionOptions="divisionOptions"/>
+            <TabletCreateForm @create="createEmployee" :divisionOptions="divisionOptions" />
           </div>
           <!-- Bot Right -->
           <div class="w-full p-4">
             <TabletUpdateDeleteForm
+              v-if="sharedSelectedItem"
               :selectedEmployee="sharedSelectedItem"
               :divisionOptions="divisionOptions"
               @update="updateEmployee"
@@ -154,11 +156,12 @@
         <div class="w-1/2 flex flex-col space-y-4">
           <!-- Top Right -->
           <div class="w-full p-4">
-            <DesktopCreateForm @create="createEmployee" :divisionOptions="divisionOptions"/>
+            <DesktopCreateForm @create="createEmployee" :divisionOptions="divisionOptions" />
           </div>
           <!-- Bot Right -->
           <div class="w-full p-4">
-            <DesktopUpdateDeleteForm
+           <DesktopUpdateDeleteForm
+              v-if="sharedSelectedItem"
               :selectedEmployee="sharedSelectedItem"
               :divisionOptions="divisionOptions"
               @update="updateEmployee"
@@ -232,7 +235,8 @@ const sharedState = reactive({
   activeFilters: [],
   currentPage: 1,
   pageSize: 7,
-  selectedItem: null
+  selectedItem: null,
+    initialLoad: true,
 });
 
 // Load initial state from localStorage or use default values
@@ -276,13 +280,17 @@ const setSharedSelectedItem = (item) => {
 }
 
 const getEmployees = async (params) => {
-    try {
-        const response = await apiService.getEmployees(params);
-        return response;
-    } catch (error) {
-        console.error('Error fetching employees:', error);
-        return { data: { employees: [] }, pagination: {} }; // Return empty data and pagination on error
-    }
+  try {
+    const response = await apiService.getEmployees(params);
+      if (sharedState.initialLoad && response.data.employees.length > 0) {
+            sharedState.selectedItem = response.data.employees[0];
+            sharedState.initialLoad = false;
+        }
+    return response;
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    return { data: { employees: [] }, pagination: {} }; // Return empty data and pagination on error
+  }
 };
 
 const createEmployee = async (newEmployee) => {
@@ -294,17 +302,18 @@ const createEmployee = async (newEmployee) => {
     }
     formData.append('name', newEmployee.name);
     formData.append('phone', newEmployee.phone);
-    formData.append('division', newEmployee.division);
+    formData.append('division_id', newEmployee.division);
     formData.append('position', newEmployee.position);
 
-
-  try {
-    const response = await apiService.createEmployee(formData);
+    try {
+      const response = await apiService.createEmployee(formData);
       const createdEmployee = response.data.employee;
-      sharedState.selectedItem = createdEmployee;
-  } catch (error) {
-    console.error('Error creating employee:', error);
-  }
+        sharedState.selectedItem = createdEmployee;
+      // Set sharedState.currentPage to 1 after create to refresh data from first page
+       sharedState.currentPage = 1;
+    } catch (error) {
+      console.error('Error creating employee:', error);
+    }
 };
 
 const updateEmployee = async (updatedEmployee) => {
@@ -316,39 +325,28 @@ const updateEmployee = async (updatedEmployee) => {
   }
     formData.append('name', updatedEmployee.name);
     formData.append('phone', updatedEmployee.phone);
-    formData.append('division', updatedEmployee.division);
+    formData.append('division_id', updatedEmployee.division);
     formData.append('position', updatedEmployee.position);
 
     try {
-        const response = await apiService.updateEmployee(updatedEmployee.id, formData);
+         const response = await apiService.updateEmployee(updatedEmployee.id, formData);
         sharedState.selectedItem = response.data.employee;
     } catch (error) {
         console.error('Error updating employee:', error);
     }
 };
 
-
-const deleteEmployee = (employeeId) => {
+const deleteEmployee = async (employeeId) => {
   console.log('Deleting employee with ID:', employeeId);
-  apiService.deleteEmployee(employeeId)
-    .then(() => {
-      sharedState.selectedItem = null;
-    })
-    .catch(error => {
-      console.error('Error deleting employee:', error);
-      // Handle error appropriately
-    });
+    try {
+        await apiService.deleteEmployee(employeeId);
+         sharedState.selectedItem = null;
+          // Set sharedState.currentPage to 1 after delete to refresh data from first page
+         sharedState.currentPage = 1;
+    } catch (error) {
+        console.error('Error deleting employee:', error);
+    }
 };
-
-const filterCategories = computed(() => {
-  return {
-    division: {
-      key: 'division.name',
-      categories: divisionOptions.value
-    },
-    position: divisionOptions.value
-  }
-})
 
 const formatImageUrl = (imageUrl) => {
     if (imageUrl && imageUrl.startsWith('/storage')) {
