@@ -343,7 +343,7 @@ const updateEmployee = async (updatedEmployee) => {
     formData.append('position', updatedEmployee.position);
     try {
         const response = await apiService.updateEmployee(updatedEmployee.id, formData);
-        sharedState.selectedItem = updatedEmployee;
+        sharedState.selectedItem = null;
         if (isMobile.value && mobileStackedList.value) {
           mobileStackedList.value.refetch();
         } else if (isTablet.value && tabletStackedList.value) {
