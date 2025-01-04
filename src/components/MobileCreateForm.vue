@@ -61,8 +61,8 @@
         >
         <select
           id="division"
-          :value="form.division"
-           @input="updateField('division', $event.target.value)"
+          :value="form.division || defaultDivisionId"
+          @input="updateField('division', $event.target.value)"
           class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
         >
           <option
@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 import CreateForm from './common/CreateForm.vue';
 
 const props = defineProps({
@@ -109,6 +109,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['create']);
+
+const defaultDivisionId = computed(() => props.divisionOptions[0]?.id || '');
 
 const employeeFormInitialState = {
   image: null,

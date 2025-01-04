@@ -219,6 +219,8 @@ const columns = ref([
 const divisionOptions = ref([]);
 const divisions = ref([]);
 
+
+
 const fetchDivisions = async () => {
   try {
     const response = await apiService.getDivisions();
@@ -256,7 +258,6 @@ watch(sharedState, (newSharedState) => {
 const sharedSearchQuery = computed(() => sharedState.searchQuery);
 const sharedActiveFilters = computed(() => sharedState.activeFilters);
 const sharedCurrentPage = computed(() => sharedState.currentPage);
-const sharedPageSize = computed(() => sharedState.pageSize);
 const sharedSelectedItem = computed(() => sharedState.selectedItem)
 
 const setSharedSearchQuery = (value) => {
@@ -309,8 +310,6 @@ const createEmployee = async (newEmployee) => {
       const response = await apiService.createEmployee(formData);
       const createdEmployee = response.data.employee;
         sharedState.selectedItem = createdEmployee;
-      // Set sharedState.currentPage to 1 after create to refresh data from first page
-       sharedState.currentPage = 1;
     } catch (error) {
       console.error('Error creating employee:', error);
     }
@@ -327,10 +326,9 @@ const updateEmployee = async (updatedEmployee) => {
     formData.append('phone', updatedEmployee.phone);
     formData.append('division_id', updatedEmployee.division);
     formData.append('position', updatedEmployee.position);
-
     try {
-         const response = await apiService.updateEmployee(updatedEmployee.id, formData);
-        sharedState.selectedItem = response.data.employee;
+        const response = await apiService.updateEmployee(updatedEmployee.id, formData);
+        sharedState.selectedItem = updatedEmployee;
     } catch (error) {
         console.error('Error updating employee:', error);
     }

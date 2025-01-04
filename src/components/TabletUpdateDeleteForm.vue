@@ -48,7 +48,7 @@
             >
             <select
               id="division"
-              :value="form.division.id"
+              :value="form.division"
               @input="updateField('division', $event.target.value)"
               class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
             >
