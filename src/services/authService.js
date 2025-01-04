@@ -1,7 +1,6 @@
-// src/services/authService.js
 import { ref } from 'vue';
 import { useLocalStorage } from './localStorageService';
-import ApiService from './ApiService';
+import apiService from './apiService';
 import { useRouter } from 'vue-router';
 
 export const useAuth = () => {
@@ -11,7 +10,7 @@ export const useAuth = () => {
 
     const login = async (username, password) => {
         try {
-            const response = await ApiService.login({ username, password });
+            const response = await apiService.login({ username, password });
             console.log(response)
             setItem('token', response.data.token);
             setItem('user', response.data.admin);
@@ -20,14 +19,10 @@ export const useAuth = () => {
         } catch (error) {
             console.error('Login failed:', error);
             let errorMessage = 'Login failed'; // Default error message
-
+            
             // Check if error.response exists and has data
-            if (error.response && error.response.data) {
-                if (error.response.data.message) {
-                    errorMessage = error.response.data.message;
-                } else {
-                    errorMessage = 'An error occurred during login.';
-                }
+            if (error.message) {
+                errorMessage = error.message;
             } else {
                 // Handle network or other errors
                 errorMessage = 'Network error or server not responding.';
@@ -39,7 +34,7 @@ export const useAuth = () => {
 
     const logout = async () => {
         try {
-            await ApiService.logout(); // Call the logout API
+            await apiService.logout(); // Call the logout API
         } catch (error) {
             console.error('Logout failed:', error);
             // Handle logout error if necessary

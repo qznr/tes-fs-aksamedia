@@ -51,8 +51,8 @@
       v-if="displayedData.length > 0"
       v-for="item in displayedData"
       :key="item.id"
-      class="bg-white dark:bg-gray-800 mt-4"
-      :class="{ 'bg-gray-200 dark:bg-gray-700': isSelected(item) }"
+      class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
+      :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
     >
       <component :is="itemComponent" :item="item" @click.stop="selectItem(item)" />
       <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />

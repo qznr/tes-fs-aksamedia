@@ -8,6 +8,13 @@
           <div class="w-full md:w-1/2 p-8">
             <h3 class="text-2xl font-bold text-gray-900 text-center mb-4">Login Here!</h3>
             <LoginForm @submit="handleLogin" />
+            <!-- Alert Message -->
+            <div v-if="loginError" class="mt-4">
+              <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">Error!</strong>
+                <span class="block sm:inline">&nbsp;{{ loginErrorMessage }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- Overlapping Card (Desktop/Tablet) -->
@@ -21,6 +28,13 @@
       <div v-else class="w-full px-6 sm:px-12">
         <h3 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">Login Here!</h3>
         <LoginForm @submit="handleLogin" />
+        <!-- Alert Message -->
+        <div v-if="loginError" class="mt-4">
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">&nbsp;{{ loginErrorMessage }}</span>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -34,8 +48,19 @@ import { useAuth } from '../services/authService';
 
 const { login } = useAuth();
 
-const handleLogin = ({ username, password }) => {
-  login(username, password);
+const loginError = ref(false);
+const loginErrorMessage = ref('');
+
+const handleLogin = async ({ username, password }) => {
+  loginError.value = false;
+  loginErrorMessage.value = '';
+
+  const result = await login(username, password);
+
+  if (result && result.success === false) {
+      loginError.value = true;
+      loginErrorMessage.value = result.error; // Set the error message from the result
+  }
 };
 
 const isMobile = ref(false);

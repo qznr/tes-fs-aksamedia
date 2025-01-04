@@ -57,7 +57,7 @@
           </th>
         </tr>
       </thead>
-      <tbody class="bg-white border border-black dark:bg-gray-800 dark:border-gray-600">
+      <tbody class="bg-white border border-black dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
         <tr v-for="item in displayedData" :key="item.id" @click="selectItem(item)" :class="{ 'bg-gray-200 dark:bg-gray-700': isSelected(item) }">
           <td
             v-for="column in columns"
