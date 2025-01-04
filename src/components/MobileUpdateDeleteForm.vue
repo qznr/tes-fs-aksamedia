@@ -130,6 +130,7 @@ const handleImageChange = (event, updateField) => {
 
 const handleUpdate = (formData) => {
   emit('update', formData);
+  emit('update:imageChanged', true);
 };
 
 const handleDelete = (id) => {

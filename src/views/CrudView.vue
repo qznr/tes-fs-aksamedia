@@ -48,6 +48,7 @@
                 :divisionOptions="divisionOptions"
                 @update="updateEmployee"
                 @delete="deleteEmployee"
+                @update:imageChanged="handleImageChange"
             />
           </div>
       </template>
@@ -98,6 +99,7 @@
                       :divisionOptions="divisionOptions"
                       @update="updateEmployee"
                       @delete="deleteEmployee"
+                      @update:imageChanged="handleImageChange"
                   />
               </div>
           </div>
@@ -169,6 +171,7 @@
               :divisionOptions="divisionOptions"
               @update="updateEmployee"
               @delete="deleteEmployee"
+              @update:imageChanged="handleImageChange"
             />
           </div>
         </div>
@@ -369,6 +372,11 @@ const deleteEmployee = async (employeeId) => {
         console.error('Error deleting employee:', error);
     }
 };
+
+const handleImageChange = (value) => {
+    console.log('Image Changed')
+    sharedState.imageChanged = value
+}
 
 const formatImageUrl = (imageUrl) => {
     if (imageUrl && imageUrl.startsWith('/storage')) {

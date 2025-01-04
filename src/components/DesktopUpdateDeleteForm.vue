@@ -84,7 +84,7 @@ const employeeFormInitialState = computed(() => {
 const handleImageChange = (event, updateField) => {
     const file = event.target.files[0];
     updateField('image', file);
-    imageChanged.value = true;
+    emit('update:imageChanged', true);
 };
 
 const handleUpdate = (formData) => {
