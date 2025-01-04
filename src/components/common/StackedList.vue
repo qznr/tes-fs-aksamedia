@@ -1,4 +1,3 @@
-<!-- src/components/common/StackedList.vue -->
 <template>
   <div class="space-y-4">
     <!-- Search and Filter Input Row -->
@@ -49,40 +48,82 @@
 
     <!-- List Items -->
     <div v-if="!loading">
-      <div
-        v-if="displayedData.length > 0"
-        v-for="item in displayedData"
-        :key="item.id"
-        class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
-        :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
-      >
-        <component :is="itemComponent" :item="item" @click.stop="selectItem(item)" />
-        <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />
-      </div>
+        <div
+            v-if="displayedData.length > 0"
+            v-for="item in displayedData"
+            :key="item.id"
+            class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
+            :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
+            @click="selectItem(item)"
+        >
+          <component :is="itemComponent" :item="item"/>
+          <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />
+        </div>
       <div v-else class="text-center text-gray-500 dark:text-gray-400">
         {{ emptyMessage }}
       </div>
 
       <!-- Pagination Controls -->
-      <div v-if="totalPages > 1" class="flex justify-center items-center text-white">
-        <button
-          @click="previousPage"
-          :disabled="currentPage === 1"
-          class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
-        <span class="mx-2 text-gray-700 dark:text-gray-300">
-          Page {{ currentPage }} of {{ totalPages }}
-        </span>
-        <button
-          @click="nextPage"
-          :disabled="currentPage === totalPages"
-          class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
-      </div>
+       <div v-if="data.length > 0">
+            <div class="px-4 py-3 bg-white border-t border-gray-200 sm:px-6 dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex justify-between items-center">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button
+                    @click="previousPage"
+                    :disabled="currentPage === 1"
+                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                    >
+                    Previous
+                    </button>
+                    <button
+                    @click="nextPage"
+                    :disabled="currentPage === pagination.last_page"
+                    class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+                    >
+                    Next
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-center">
+                    <div>
+                    <nav class="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
+                        <button
+                        @click="previousPage"
+                        :disabled="currentPage === 1"
+                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                        <span class="sr-only">Previous</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        </button>
+                        <button
+                        v-for="page in pagination.last_page"
+                        :key="page"
+                        @click="goToPage(page)"
+                        :class="[
+                            'relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600',
+                            { 'z-10 bg-primary border-primary text-gray-700 dark:bg-primary dark:border-primary dark:text-white': currentPage === page },
+                        ]"
+                        aria-current="page"
+                        >
+                        {{ page }}
+                        </button>
+                        <button
+                        @click="nextPage"
+                        :disabled="currentPage === pagination.last_page"
+                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                        <span class="sr-only">Next</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        </button>
+                    </nav>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
     </div>
      <div v-else class="flex justify-center items-center h-40">
         <ion-icon name="sync" class="animate-spin text-4xl text-gray-500 dark:text-gray-400"></ion-icon>
@@ -112,10 +153,6 @@ const props = defineProps({
     showDivider: {
         type: Boolean,
         default: true,
-    },
-    pageSize: {
-        type: Number,
-        default: 5,
     },
     searchable: {
         type: Boolean,
@@ -236,26 +273,27 @@ const removeFilter = (index) => {
 };
 
 
-const totalPages = computed(() => Math.ceil(data.value.length / props.pageSize));
-
 const displayedData = computed(() => {
-    const startIndex = (currentPage.value - 1) * props.pageSize;
-    const endIndex = startIndex + props.pageSize;
-    return data.value.slice(startIndex, endIndex);
+    return data.value;
 });
 
 const previousPage = () => {
-    if (currentPage.value > 1) {
-        currentPage.value--;
-        emit('update:currentPage', currentPage.value)
-    }
+  if (currentPage.value > 1) {
+    currentPage.value--;
+     emit('update:currentPage', currentPage.value)
+  }
 };
 
 const nextPage = () => {
-    if (currentPage.value < totalPages.value) {
-        currentPage.value++;
-        emit('update:currentPage', currentPage.value)
-    }
+  if (currentPage.value < pagination.value.last_page) {
+    currentPage.value++;
+     emit('update:currentPage', currentPage.value)
+  }
+};
+
+const goToPage = (page) => {
+  currentPage.value = page;
+  emit('update:currentPage', currentPage.value)
 };
 
 
