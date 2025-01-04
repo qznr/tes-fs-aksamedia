@@ -1,3 +1,4 @@
+<!-- src/components/common/StackedList.vue -->
 <template>
   <div class="space-y-4">
     <!-- Search and Filter Input Row -->
@@ -200,28 +201,27 @@ const props = defineProps({
 
 const emit = defineEmits(['update:searchQuery', 'update:activeFilters', 'update:currentPage', 'update:selectedItem']);
 
-const currentPage = ref(props.currentPage);
-const searchQuery = ref(props.searchQuery);
-const activeFilters = ref(props.activeFilters);
+const internalCurrentPage = ref(props.currentPage);
+const internalSearchQuery = ref(props.searchQuery);
+const internalActiveFilters = ref(props.activeFilters);
 const data = ref([]);
 const pagination = ref({});
 const loading = ref(false);
-
 
 const debouncedFetchData = debounce(async () => {
     loading.value = true;
     try {
         const params = {
-            page: currentPage.value,
+            page: internalCurrentPage.value,
         };
 
-        if (searchQuery.value && props.searchColumns) {
+        if (internalSearchQuery.value && props.searchColumns) {
             props.searchColumns.forEach(column => {
-                params[`${column}`] = searchQuery.value;
+                params[`${column}`] = internalSearchQuery.value;
             });
         }
 
-        activeFilters.value.forEach(filter => {
+        internalActiveFilters.value.forEach(filter => {
             params[`${filter.column}_id`] = filter.value;
         });
 
@@ -242,82 +242,84 @@ onMounted(async () => {
 });
 
 const applyFilter = (columnKey, category) => {
-    const existingFilterIndex = activeFilters.value.findIndex(
+    const existingFilterIndex = internalActiveFilters.value.findIndex(
         (filter) => filter.column === columnKey
     );
 
     if (existingFilterIndex !== -1) {
         // Update existing filter
-        if (activeFilters.value[existingFilterIndex].value === category.id) {
+        if (internalActiveFilters.value[existingFilterIndex].value === category.id) {
             // Remove filter if the same value is clicked again
-            activeFilters.value.splice(existingFilterIndex, 1);
+           internalActiveFilters.value.splice(existingFilterIndex, 1);
         } else {
             // Update filter value
-            activeFilters.value[existingFilterIndex].value = category.id;
-            activeFilters.value[existingFilterIndex].category = category.name;
+            internalActiveFilters.value[existingFilterIndex].value = category.id;
+            internalActiveFilters.value[existingFilterIndex].category = category.name;
         }
     } else {
         // Add new filter
-        activeFilters.value.push({
+        internalActiveFilters.value.push({
             column: columnKey,
             value: category.id,
             category: category.name,
         });
     }
+    emit('update:activeFilters', internalActiveFilters.value);
 };
 
 
 const removeFilter = (index) => {
-    activeFilters.value.splice(index, 1);
-    emit('update:activeFilters', activeFilters.value);
+    internalActiveFilters.value.splice(index, 1);
+      emit('update:activeFilters', internalActiveFilters.value);
 };
-
 
 const displayedData = computed(() => {
     return data.value;
 });
 
 const previousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-     emit('update:currentPage', currentPage.value)
+  if (internalCurrentPage.value > 1) {
+    internalCurrentPage.value--;
+     emit('update:currentPage', internalCurrentPage.value)
   }
 };
 
 const nextPage = () => {
-  if (currentPage.value < pagination.value.last_page) {
-    currentPage.value++;
-     emit('update:currentPage', currentPage.value)
+  if (internalCurrentPage.value < pagination.value.last_page) {
+    internalCurrentPage.value++;
+     emit('update:currentPage', internalCurrentPage.value)
   }
 };
 
 const goToPage = (page) => {
-  currentPage.value = page;
-  emit('update:currentPage', currentPage.value)
+    internalCurrentPage.value = page;
+     emit('update:currentPage', internalCurrentPage.value)
 };
 
 
 watch(() => props.searchQuery, (newVal) => {
-    searchQuery.value = newVal;
-    currentPage.value = 1; // Reset page on search
+    internalSearchQuery.value = newVal;
+    internalCurrentPage.value = 1; // Reset page on search
     debouncedFetchData();
 });
-
-watch(currentPage, debouncedFetchData);
-
-watch(activeFilters, () => {
-     currentPage.value = 1;
-    debouncedFetchData();
-}, { deep: true });
-
-
-watch(() => props.activeFilters, (newVal) => {
-    activeFilters.value = newVal;
-}, { deep: true });
 
 watch(() => props.currentPage, (newVal) => {
-    currentPage.value = newVal;
+  internalCurrentPage.value = newVal
+    debouncedFetchData();
 });
+
+watch(() => props.activeFilters, (newVal) => {
+  internalActiveFilters.value = newVal
+   internalCurrentPage.value = 1;
+    debouncedFetchData();
+}, { deep: true });
+
+watch(internalCurrentPage, debouncedFetchData);
+
+watch(internalSearchQuery, () => {
+   emit('update:searchQuery', internalSearchQuery.value)
+});
+
 
 const selectItem = (item) => {
     if (props.selectedItem === item) {

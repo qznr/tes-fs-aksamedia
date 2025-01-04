@@ -71,11 +71,11 @@
                 :searchable="true"
                 :searchColumns="['name']"
                 :filterable="true"
-               :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
-                :searchQuery="sharedSearchQuery"
+                :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
+                 :searchQuery="sharedSearchQuery"
                 :activeFilters="sharedActiveFilters"
                 :currentPage="sharedCurrentPage"
-                 @update:searchQuery="setSharedSearchQuery"
+                @update:searchQuery="setSharedSearchQuery"
                 @update:activeFilters="setSharedActiveFilters"
                 @update:currentPage="setSharedCurrentPage"
                 :selectedItem="sharedSelectedItem"
@@ -114,11 +114,17 @@
             </h2>
             <div class="rounded-lg overflow-hidden flex-grow">
               <DataTable
-                :fetchData="getEmployees"
+               :fetchData="getEmployees"
                 :columns="columns"
                 :searchColumns="['name']"
                  :filterableColumns="['division']"
                  :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
+                :searchQuery="sharedSearchQuery"
+                :activeFilters="sharedActiveFilters"
+                :currentPage="sharedCurrentPage"
+                @update:searchQuery="setSharedSearchQuery"
+                @update:activeFilters="setSharedActiveFilters"
+                @update:currentPage="setSharedCurrentPage"
                 :selectedItem="sharedSelectedItem"
                 @update:selectedItem="setSharedSelectedItem"
               >
@@ -252,13 +258,11 @@ const sharedSelectedItem = computed(() => sharedState.selectedItem)
 const setSharedSearchQuery = (value) => {
   console.log('Setting shared search query:', value);
   sharedState.searchQuery = value;
-  sharedState.currentPage = 1; // Reset to page 1 when search query changes
 };
 
 const setSharedActiveFilters = (value) => {
   console.log('Setting shared active filters:', value);
   sharedState.activeFilters = value;
-  sharedState.currentPage = 1; // Reset to page 1 when filters change
 };
 
 const setSharedCurrentPage = (value) => {
@@ -345,7 +349,6 @@ const filterCategories = computed(() => {
     position: divisionOptions.value
   }
 })
-
 
 const formatImageUrl = (imageUrl) => {
     if (imageUrl && imageUrl.startsWith('/storage')) {

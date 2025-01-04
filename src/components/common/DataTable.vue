@@ -171,20 +171,33 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+    searchQuery: {
+        type: String,
+        default: ''
+    },
+    activeFilters: {
+        type: Array,
+        default: () => []
+    },
+    currentPage: {
+        type: Number,
+        default: 1
+    },
   selectedItem: {
     type: Object,
     default: null
   }
 });
 
-const emit = defineEmits(['update:selectedItem']);
+const emit = defineEmits(['update:searchQuery', 'update:activeFilters', 'update:currentPage', 'update:selectedItem']);
 
-const internalSearchQuery = ref('');
-const currentPage = ref(1);
-const activeFilters = ref([]);
+const internalSearchQuery = ref(props.searchQuery);
+const currentPage = ref(props.currentPage);
+const activeFilters = ref(props.activeFilters);
 const data = ref([]);
 const pagination = ref({});
 const loading = ref(false)
+
 
 const debouncedFetchData = debounce(async () => {
   loading.value = true; // Set loading to true before the request
@@ -229,20 +242,25 @@ const displayedData = computed(() => {
 
 
 // Watchers for reacting to changes
-watch(currentPage, debouncedFetchData);
-
-watch(internalSearchQuery, () => {
-  currentPage.value = 1; // Reset to first page on search
-  debouncedFetchData();
+watch(() => props.currentPage, (newVal) => {
+  currentPage.value = newVal
+    debouncedFetchData();
 });
 
-watch(activeFilters, () => {
-  currentPage.value = 1; // Reset to first page on filter change
-  debouncedFetchData();
+watch(() => props.searchQuery, (newVal) => {
+  internalSearchQuery.value = newVal;
+    currentPage.value = 1; // Reset to first page on search
+    debouncedFetchData();
+});
+
+watch(() => props.activeFilters, (newVal) => {
+  activeFilters.value = newVal
+    currentPage.value = 1; // Reset to first page on filter change
+    debouncedFetchData();
 }, { deep: true });
 
 const handleSearch = () => {
-  // The actual search is handled by the watcher on internalSearchQuery
+    emit('update:searchQuery', internalSearchQuery.value)
 };
 
 const applyFilter = (columnKey, filterValue, filterName) => {
@@ -268,26 +286,31 @@ const applyFilter = (columnKey, filterValue, filterName) => {
             category: filterName,
         });
     }
+    emit('update:activeFilters', activeFilters.value)
 };
 
 const removeFilter = (index) => {
   activeFilters.value.splice(index, 1);
+   emit('update:activeFilters', activeFilters.value)
 };
 
 const previousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--;
+     emit('update:currentPage', currentPage.value)
   }
 };
 
 const nextPage = () => {
   if (currentPage.value < pagination.value.last_page) {
     currentPage.value++;
+     emit('update:currentPage', currentPage.value)
   }
 };
 
 const goToPage = (page) => {
   currentPage.value = page;
+   emit('update:currentPage', currentPage.value)
 };
 
 const selectItem = (item) => {
