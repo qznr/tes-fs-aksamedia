@@ -97,68 +97,68 @@ import DropdownItem from './DropdownItem.vue';
 import { debounce } from 'lodash-es';
 
 const props = defineProps({
-  fetchData: { // The API function to fetch data
-    type: Function,
-    required: true
-  },
-  itemComponent: {
-    type: Object,
-    required: true,
-  },
-  emptyMessage: {
-    type: String,
-    default: 'No data available.',
-  },
-  showDivider: {
-    type: Boolean,
-    default: true,
-  },
-  pageSize: {
-    type: Number,
-    default: 5,
-  },
-  searchable: {
-    type: Boolean,
-    default: false,
-  },
-  searchColumns: {
-    type: Array,
-    default: () => null, // If null, search in all columns
-  },
-  filterable: {
-    type: Boolean,
-    default: false,
-  },
-    filterCategories: {
-      type: Object,
-      default: () => ({}),
-      validator: (value) => {
-        return Object.values(value).every(
-            (item) =>
-            Array.isArray(item) ||
-            (typeof item === 'object' &&
-                item !== null &&
-                Array.isArray(item.categories) &&
-                (item.key === undefined || typeof item.key === 'string'))
-        );
-      },
+    fetchData: {
+        type: Function,
+        required: true
     },
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  activeFilters: {
-    type: Array,
-    default: () => []
-  },
-  currentPage: {
-    type: Number,
-    default: 1
-  },
-  selectedItem: {
-    type: Object,
-    default: null
-  }
+    itemComponent: {
+        type: Object,
+        required: true,
+    },
+    emptyMessage: {
+        type: String,
+        default: 'No data available.',
+    },
+    showDivider: {
+        type: Boolean,
+        default: true,
+    },
+    pageSize: {
+        type: Number,
+        default: 5,
+    },
+    searchable: {
+        type: Boolean,
+        default: false,
+    },
+    searchColumns: {
+        type: Array,
+        default: () => null, // If null, search in all columns
+    },
+    filterable: {
+        type: Boolean,
+        default: false,
+    },
+    filterCategories: {
+        type: Object,
+        default: () => ({}),
+        validator: (value) => {
+            return Object.values(value).every(
+                (item) =>
+                    Array.isArray(item) ||
+                    (typeof item === 'object' &&
+                        item !== null &&
+                        Array.isArray(item.categories) &&
+                        (item.key === undefined || typeof item.key === 'string'))
+            );
+        },
+    },
+    searchQuery: {
+        type: String,
+        default: ''
+    },
+    activeFilters: {
+        type: Array,
+        default: () => []
+    },
+    currentPage: {
+        type: Number,
+        default: 1
+    },
+    selectedItem: {
+        type: Object,
+        default: null
+    }
 });
 
 const emit = defineEmits(['update:searchQuery', 'update:activeFilters', 'update:currentPage', 'update:selectedItem']);
@@ -172,36 +172,36 @@ const loading = ref(false);
 
 
 const debouncedFetchData = debounce(async () => {
-  loading.value = true;
-  try {
-    const params = {
-      page: currentPage.value,
-    };
+    loading.value = true;
+    try {
+        const params = {
+            page: currentPage.value,
+        };
 
-    if (searchQuery.value && props.searchColumns) {
-        props.searchColumns.forEach(column => {
-            params[`${column}`] = searchQuery.value;
+        if (searchQuery.value && props.searchColumns) {
+            props.searchColumns.forEach(column => {
+                params[`${column}`] = searchQuery.value;
+            });
+        }
+
+        activeFilters.value.forEach(filter => {
+            params[`${filter.column}_id`] = filter.value;
         });
+
+        const response = await props.fetchData(params);
+        data.value = response.data.employees;
+        pagination.value = response.pagination;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        data.value = [];
+        pagination.value = {};
+    } finally {
+        loading.value = false;
     }
-
-    activeFilters.value.forEach(filter => {
-        params[`${filter.column}_id`] = filter.value;
-    });
-
-    const response = await props.fetchData(params);
-    data.value = response.data.employees;
-    pagination.value = response.pagination;
-  } catch (error) {
-      console.error('Error fetching data:', error);
-      data.value = [];
-      pagination.value = {};
-  } finally {
-      loading.value = false;
-  }
 }, 250);
 
 onMounted(async () => {
-  await debouncedFetchData();
+    await debouncedFetchData();
 });
 
 const applyFilter = (columnKey, category) => {
@@ -231,8 +231,8 @@ const applyFilter = (columnKey, category) => {
 
 
 const removeFilter = (index) => {
-  activeFilters.value.splice(index, 1);
-  emit('update:activeFilters', activeFilters.value);
+    activeFilters.value.splice(index, 1);
+    emit('update:activeFilters', activeFilters.value);
 };
 
 
@@ -245,45 +245,48 @@ const displayedData = computed(() => {
 });
 
 const previousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-    emit('update:currentPage', currentPage.value)
-  }
+    if (currentPage.value > 1) {
+        currentPage.value--;
+        emit('update:currentPage', currentPage.value)
+    }
 };
 
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-    emit('update:currentPage', currentPage.value)
-  }
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+        emit('update:currentPage', currentPage.value)
+    }
 };
 
+
 watch(() => props.searchQuery, (newVal) => {
-  searchQuery.value = newVal;
+    searchQuery.value = newVal;
+    currentPage.value = 1; // Reset page on search
+    debouncedFetchData();
 });
 
 watch(currentPage, debouncedFetchData);
 
 watch(activeFilters, () => {
-   currentPage.value = 1;
+     currentPage.value = 1;
     debouncedFetchData();
 }, { deep: true });
 
 
 watch(() => props.activeFilters, (newVal) => {
     activeFilters.value = newVal;
-  }, { deep: true });
-  
+}, { deep: true });
+
 watch(() => props.currentPage, (newVal) => {
     currentPage.value = newVal;
 });
 
 const selectItem = (item) => {
-  if (props.selectedItem === item) {
-    emit('update:selectedItem', null);
-  } else {
-    emit('update:selectedItem', item);
-  }
+    if (props.selectedItem === item) {
+        emit('update:selectedItem', null);
+    } else {
+        emit('update:selectedItem', item);
+    }
 };
 
 const isSelected = (item) => {
@@ -291,9 +294,3 @@ const isSelected = (item) => {
 };
 
 </script>
-
-<style scoped>
-ion-icon {
-  font-size: 16px;
-}
-</style>
