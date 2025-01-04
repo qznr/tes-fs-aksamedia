@@ -1,3 +1,4 @@
+<!-- src/components/common/StackedList.vue -->
 <template>
   <div class="space-y-4">
     <!-- Search and Filter Input Row -->
@@ -12,7 +13,7 @@
         class="border focus:border-primary appearance-none rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
       />
 
-      <div v-if="filterable && Object.keys(filterCategories).length > 0" class="flex flex-wrap gap-2">
+      <div v-if="filterable" class="flex flex-wrap gap-2">
         <!-- Filter Dropdown Buttons -->
         <div v-for="(filterCategory, column) in filterCategories" :key="column" class="relative inline-block">
             <Dropdown :contentClasses="'py-1 bg-white dark:bg-gray-800'">
@@ -27,7 +28,7 @@
                   :key="category"
                   @click="applyFilter(column, category)"
                 >
-                 {{ category }}
+                 {{ category.name }}
                 </DropdownItem>
               </template>
             </Dropdown>
@@ -47,53 +48,58 @@
     </div>
 
     <!-- List Items -->
-    <div
-      v-if="displayedData.length > 0"
-      v-for="item in displayedData"
-      :key="item.id"
-      class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
-      :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
-    >
-      <component :is="itemComponent" :item="item" @click.stop="selectItem(item)" />
-      <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />
-    </div>
-    <div v-else class="text-center text-gray-500 dark:text-gray-400">
-      {{ emptyMessage }}
-    </div>
+    <div v-if="!loading">
+      <div
+        v-if="displayedData.length > 0"
+        v-for="item in displayedData"
+        :key="item.id"
+        class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
+        :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
+      >
+        <component :is="itemComponent" :item="item" @click.stop="selectItem(item)" />
+        <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />
+      </div>
+      <div v-else class="text-center text-gray-500 dark:text-gray-400">
+        {{ emptyMessage }}
+      </div>
 
-    <!-- Pagination Controls -->
-    <div v-if="totalPages > 1" class="flex justify-center items-center text-white">
-      <button
-        @click="previousPage"
-        :disabled="currentPage === 1"
-        class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Previous
-      </button>
-      <span class="mx-2 text-gray-700 dark:text-gray-300">
-        Page {{ currentPage }} of {{ totalPages }}
-      </span>
-      <button
-        @click="nextPage"
-        :disabled="currentPage === totalPages"
-        class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Next
-      </button>
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" class="flex justify-center items-center text-white">
+        <button
+          @click="previousPage"
+          :disabled="currentPage === 1"
+          class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        <span class="mx-2 text-gray-700 dark:text-gray-300">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <button
+          @click="nextPage"
+          :disabled="currentPage === totalPages"
+          class="px-4 py-2 mx-1 rounded bg-primary hover:bg-opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+     <div v-else class="flex justify-center items-center h-40">
+        <ion-icon name="sync" class="animate-spin text-4xl text-gray-500 dark:text-gray-400"></ion-icon>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, computed, ref, watch, defineEmits, onBeforeMount } from 'vue';
+import { defineProps, computed, ref, watch, defineEmits, onMounted } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DropdownItem from './DropdownItem.vue';
+import { debounce } from 'lodash-es';
 
 const props = defineProps({
-  data: {
-    type: Array,
-    required: true,
-    default: () => [],
+  fetchData: { // The API function to fetch data
+    type: Function,
+    required: true
   },
   itemComponent: {
     type: Object,
@@ -123,20 +129,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  filterCategories: {
-    type: Object,
-    default: () => ({}),
-    validator: (value) => {
-      return Object.values(value).every(
-        (item) =>
-          Array.isArray(item) ||
-          (typeof item === 'object' &&
-            item !== null &&
-            Array.isArray(item.categories) &&
-            (item.key === undefined || typeof item.key === 'string'))
-      );
+    filterCategories: {
+      type: Object,
+      default: () => ({}),
+      validator: (value) => {
+        return Object.values(value).every(
+            (item) =>
+            Array.isArray(item) ||
+            (typeof item === 'object' &&
+                item !== null &&
+                Array.isArray(item.categories) &&
+                (item.key === undefined || typeof item.key === 'string'))
+        );
+      },
     },
-  },
   searchQuery: {
     type: String,
     default: ''
@@ -160,73 +166,82 @@ const emit = defineEmits(['update:searchQuery', 'update:activeFilters', 'update:
 const currentPage = ref(props.currentPage);
 const searchQuery = ref(props.searchQuery);
 const activeFilters = ref(props.activeFilters);
+const data = ref([]);
+const pagination = ref({});
+const loading = ref(false);
+
+
+const debouncedFetchData = debounce(async () => {
+  loading.value = true;
+  try {
+    const params = {
+      page: currentPage.value,
+    };
+
+    if (searchQuery.value && props.searchColumns) {
+        props.searchColumns.forEach(column => {
+            params[`${column}`] = searchQuery.value;
+        });
+    }
+
+    activeFilters.value.forEach(filter => {
+        params[`${filter.column}_id`] = filter.value;
+    });
+
+    const response = await props.fetchData(params);
+    data.value = response.data.employees;
+    pagination.value = response.pagination;
+  } catch (error) {
+      console.error('Error fetching data:', error);
+      data.value = [];
+      pagination.value = {};
+  } finally {
+      loading.value = false;
+  }
+}, 250);
+
+onMounted(async () => {
+  await debouncedFetchData();
+});
 
 const applyFilter = (columnKey, category) => {
-  const filterExists = activeFilters.value.some(
-    (filter) => filter.column === columnKey && filter.category === category
-  );
-  if (!filterExists) {
-    activeFilters.value = [...activeFilters.value, { column: columnKey, category }];
-    emit('update:activeFilters', activeFilters.value);
-  }
+    const existingFilterIndex = activeFilters.value.findIndex(
+        (filter) => filter.column === columnKey
+    );
+
+    if (existingFilterIndex !== -1) {
+        // Update existing filter
+        if (activeFilters.value[existingFilterIndex].value === category.id) {
+            // Remove filter if the same value is clicked again
+            activeFilters.value.splice(existingFilterIndex, 1);
+        } else {
+            // Update filter value
+            activeFilters.value[existingFilterIndex].value = category.id;
+            activeFilters.value[existingFilterIndex].category = category.name;
+        }
+    } else {
+        // Add new filter
+        activeFilters.value.push({
+            column: columnKey,
+            value: category.id,
+            category: category.name,
+        });
+    }
 };
+
 
 const removeFilter = (index) => {
   activeFilters.value.splice(index, 1);
   emit('update:activeFilters', activeFilters.value);
 };
 
-const clearFilters = () => {
-  activeFilters.value = [];
-  emit('update:activeFilters', activeFilters.value);
-};
 
-const filteredDataBeforeSearch = computed(() => {
-  if (activeFilters.value.length === 0) {
-    return props.data;
-  }
-  return props.data.filter(item =>
-    activeFilters.value.some(filter => {
-      const filterConfig = props.filterCategories[filter.column];
-      let itemValue;
-
-      if (Array.isArray(filterConfig)) {
-        // Simple filtering on a direct property
-        itemValue = item[filter.column];
-      } else if (typeof filterConfig === 'object' && filterConfig !== null && filterConfig.key) {
-        // Filtering on a nested property
-        const keys = filterConfig.key.split('.');
-        itemValue = keys.reduce((obj, key) => (obj && obj[key] !== undefined ? obj[key] : undefined), item);
-      } else {
-        // Fallback or error handling if the configuration is unexpected
-        itemValue = item[filter.column];
-      }
-
-      return itemValue === filter.category;
-    })
-  );
-});
-
-const filteredData = computed(() => {
-  if (!searchQuery.value) {
-    return filteredDataBeforeSearch.value;
-  }
-  const lowerCaseQuery = searchQuery.value.toLowerCase();
-  return filteredDataBeforeSearch.value.filter(item => {
-    const columnsToSearch = props.searchColumns || Object.keys(item);
-    return columnsToSearch.some(key => {
-      const value = item[key];
-      return value !== null && value !== undefined && value.toString().toLowerCase().includes(lowerCaseQuery);
-    });
-  });
-});
-
-const totalPages = computed(() => Math.ceil(filteredData.value.length / props.pageSize));
+const totalPages = computed(() => Math.ceil(data.value.length / props.pageSize));
 
 const displayedData = computed(() => {
-  const startIndex = (currentPage.value - 1) * props.pageSize;
-  const endIndex = startIndex + props.pageSize;
-  return filteredData.value.slice(startIndex, endIndex);
+    const startIndex = (currentPage.value - 1) * props.pageSize;
+    const endIndex = startIndex + props.pageSize;
+    return data.value.slice(startIndex, endIndex);
 });
 
 const previousPage = () => {
@@ -247,12 +262,20 @@ watch(() => props.searchQuery, (newVal) => {
   searchQuery.value = newVal;
 });
 
-watch(() => props.activeFilters, (newVal) => {
-  activeFilters.value = newVal;
+watch(currentPage, debouncedFetchData);
+
+watch(activeFilters, () => {
+   currentPage.value = 1;
+    debouncedFetchData();
 }, { deep: true });
 
+
+watch(() => props.activeFilters, (newVal) => {
+    activeFilters.value = newVal;
+  }, { deep: true });
+  
 watch(() => props.currentPage, (newVal) => {
-  currentPage.value = newVal;
+    currentPage.value = newVal;
 });
 
 const selectItem = (item) => {
@@ -264,7 +287,7 @@ const selectItem = (item) => {
 };
 
 const isSelected = (item) => {
-  return props.selectedItem && props.selectedItem.id === item.id;
+    return props.selectedItem && props.selectedItem.id === item.id;
 };
 
 </script>

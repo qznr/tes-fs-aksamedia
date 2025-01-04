@@ -22,13 +22,13 @@
             </h2>
             <div class="rounded-lg overflow-hidden flex-grow">
               <StackedList
-                :data="employees"
+                :fetchData="getEmployees"
                 :itemComponent="EmployeeItem"
                 empty-message="No employees available."
                 :searchable="true"
                 :searchColumns="['name']"
                 :filterable="true"
-                :filterCategories="filterCategories"
+                :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
                 :searchQuery="sharedSearchQuery"
                 :activeFilters="sharedActiveFilters"
                 :currentPage="sharedCurrentPage"
@@ -65,14 +65,14 @@
               Employees
             </h2>
             <div class="rounded-lg overflow-hidden flex-grow">
-              <StackedList
-                :data="employees"
+               <StackedList
+                :fetchData="getEmployees"
                 :itemComponent="EmployeeItem"
                 empty-message="No employees available."
                 :searchable="true"
                 :searchColumns="['name']"
                 :filterable="true"
-                :filterCategories="filterCategories"
+                :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
                 :searchQuery="sharedSearchQuery"
                 :activeFilters="sharedActiveFilters"
                 :currentPage="sharedCurrentPage"
@@ -116,18 +116,11 @@
             </h2>
             <div class="rounded-lg overflow-hidden flex-grow">
               <DataTable
-                :data="employees"
+                :fetchData="getEmployees"
                 :columns="columns"
                 :searchColumns="['name']"
-                :filterableColumns="['division']"
-                :filterCategories="filterCategories"
-                :searchQuery="sharedSearchQuery"
-                :activeFilters="sharedActiveFilters"
-                :currentPage="sharedCurrentPage"
-                @update:searchQuery="setSharedSearchQuery"
-                @update:activeFilters="setSharedActiveFilters"
-                @update:currentPage="setSharedCurrentPage"
-                :pageSize="sharedPageSize"
+                 :filterableColumns="['division']"
+                 :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
                 :selectedItem="sharedSelectedItem"
                 @update:selectedItem="setSharedSelectedItem"
               >
@@ -186,8 +179,8 @@ import MobileCreateForm from '../components/MobileCreateForm.vue';
 import DesktopUpdateDeleteForm from '../components/DesktopUpdateDeleteForm.vue';
 import TabletUpdateDeleteForm from '../components/TabletUpdateDeleteForm.vue';
 import MobileUpdateDeleteForm from '../components/MobileUpdateDeleteForm.vue';
-import employeesData from '../assets/employees.json';
 import { useLocalStorage } from '../services/localStorageService';
+import apiService from '../services/apiService';
 
 const { getItem, setItem } = useLocalStorage();
 
@@ -201,6 +194,7 @@ const checkScreenSize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', checkScreenSize);
+  fetchDivisions();
 });
 
 onUnmounted(() => {
@@ -215,13 +209,17 @@ const columns = ref([
   { label: 'Position', key: 'position' },
 ]);
 
-const divisionOptions = ['Mobile Apps', 'QA', 'Full Stack', 'Backend', 'Frontend', 'UI/UX Designer'];
+const divisionOptions = ref([]);
+const divisions = ref([]);
 
-const filterCategories = {
-  division: {
-    categories: divisionOptions,
-    key: 'division.name'
-  },
+const fetchDivisions = async () => {
+  try {
+    const response = await apiService.getDivisions();
+    divisions.value = response.data.divisions;
+    divisionOptions.value = divisions.value.map(division => division.name);
+  } catch (error) {
+    console.error('Error fetching divisions:', error);
+  }
 };
 
 // Shared State (using reactive for easier updates)
@@ -233,26 +231,11 @@ const sharedState = reactive({
   selectedItem: null
 });
 
-// Separate employees state
-const employees = ref([]);
-
 // Load initial state from localStorage or use default values
 const storedState = getItem('crudState');
-const storedEmployees = getItem('employees');
-
-if (storedEmployees) {
-    employees.value = storedEmployees;
-} else {
-    employees.value = employeesData;
-}
 
 if (storedState) {
   Object.assign(sharedState, storedState);
-}
-
-// Set the default selected item if it doesn't exist
-if (!sharedState.selectedItem && employees.value.length > 0) {
-  sharedState.selectedItem = employees.value[0];
 }
 
 // Watch for changes in sharedState and update localStorage
@@ -260,9 +243,6 @@ watch(sharedState, (newSharedState) => {
     setItem('crudState', newSharedState);
 }, { deep: true });
 
-watch(employees, (newEmployees) => {
-    setItem('employees', newEmployees);
-}, { deep: true });
 
 // Expose shared state variables and update functions to the template
 const sharedSearchQuery = computed(() => sharedState.searchQuery);
@@ -293,24 +273,79 @@ const setSharedSelectedItem = (item) => {
   sharedState.selectedItem = item ? { ...item } : null; // maintain reactivity for UpdateDeleteForm
 }
 
+const getEmployees = async (params) => {
+    try {
+        const response = await apiService.getEmployees(params);
+        return response;
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+        return { data: { employees: [] }, pagination: {} }; // Return empty data and pagination on error
+    }
+};
+
 const createEmployee = (newEmployee) => {
   console.log('Creating employee:', newEmployee);
-  employees.value.push(newEmployee);
-  sharedState.selectedItem = newEmployee; // set sharedState after creating
+
+  // Find the division object based on the division name
+  const division = divisions.value.find(div => div.name === newEmployee.division.name);
+  if (division) {
+    newEmployee.division_id = division.id; // Set the division_id
+    // Remove the division object as it's not needed for the backend
+    delete newEmployee.division;
+  }
+
+  apiService.createEmployee(newEmployee)
+    .then(response => {
+      // Assuming the API returns the created employee with an ID
+      const createdEmployee = response.data.employee;
+      sharedState.selectedItem = createdEmployee;
+    })
+    .catch(error => {
+      console.error('Error creating employee:', error);
+      // Handle error appropriately
+    });
 };
 
 const updateEmployee = (updatedEmployee) => {
   console.log('Updating employee:', updatedEmployee);
-  const index = employees.value.findIndex((e) => e.id === updatedEmployee.id);
-  if (index !== -1) {
-    employees.value.splice(index, 1, updatedEmployee);
-    sharedState.selectedItem = updatedEmployee; // update sharedState
+
+  // Find the division object based on the division name
+  const division = divisions.value.find(div => div.name === updatedEmployee.division.name);
+  if (division) {
+    updatedEmployee.division_id = division.id; // Set the division_id
+    // Remove the division object as it's not needed for the backend
+    delete updatedEmployee.division;
   }
+
+  apiService.updateEmployee(updatedEmployee.id, updatedEmployee)
+    .then(response => {
+        sharedState.selectedItem = response.data.employee;
+    })
+    .catch(error => {
+      console.error('Error updating employee:', error);
+      // Handle error appropriately
+    });
 };
 
 const deleteEmployee = (employeeId) => {
   console.log('Deleting employee with ID:', employeeId);
-  employees.value = employees.value.filter((e) => e.id !== employeeId);
-  sharedState.selectedItem = null; // reset sharedState
+  apiService.deleteEmployee(employeeId)
+    .then(() => {
+      sharedState.selectedItem = null;
+    })
+    .catch(error => {
+      console.error('Error deleting employee:', error);
+      // Handle error appropriately
+    });
 };
+
+const filterCategories = computed(() => {
+  return {
+    division: {
+      key: 'division.name',
+      categories: divisionOptions.value
+    },
+    position: divisionOptions.value
+  }
+})
 </script>
