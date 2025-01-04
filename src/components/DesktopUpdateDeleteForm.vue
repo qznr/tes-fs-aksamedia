@@ -56,8 +56,10 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue';
+import { defineProps, defineEmits, computed, ref } from 'vue';
 import UpdateDeleteForm from './common/UpdateDeleteForm.vue';
+
+const imageChanged = ref(false);
 
 const props = defineProps({
   selectedEmployee: {
@@ -70,9 +72,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update', 'delete']);
-
-const defaultDivisionId = computed(() => props.divisionOptions[0]?.id || '');
+const emit = defineEmits(['update', 'delete', 'update:imageChanged']);
 
 const employeeFormInitialState = computed(() => {
   return props.selectedEmployee ? { 
@@ -84,10 +84,12 @@ const employeeFormInitialState = computed(() => {
 const handleImageChange = (event, updateField) => {
     const file = event.target.files[0];
     updateField('image', file);
+    imageChanged.value = true;
 };
 
 const handleUpdate = (formData) => {
   emit('update', formData);
+  imageChanged.value = false;
 };
 
 const handleDelete = (id) => {

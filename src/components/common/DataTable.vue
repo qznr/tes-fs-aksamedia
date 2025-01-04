@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed, watch, defineEmits, onMounted } from 'vue';
+import {ref, computed, watch, onMounted, defineExpose, defineEmits, defineProps } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DropdownItem from './DropdownItem.vue';
 import { debounce } from 'lodash-es';
@@ -324,6 +324,15 @@ const selectItem = (item) => {
 const isSelected = (item) => {
   return props.selectedItem && props.selectedItem.id === item.id;
 };
+
+const refetch = async () => {
+     await debouncedFetchData();
+ }
+
+ defineExpose({
+     refetch
+ })
+
 </script>
 
 <style scoped>

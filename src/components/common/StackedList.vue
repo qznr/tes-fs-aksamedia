@@ -16,22 +16,22 @@
       <div v-if="filterable" class="flex flex-wrap gap-2">
         <!-- Filter Dropdown Buttons -->
         <div v-for="(filterCategory, column) in filterCategories" :key="column" class="relative inline-block">
-            <Dropdown :contentClasses="'py-1 bg-white dark:bg-gray-800'">
-              <template #trigger>
-                <button class="px-2 py-2 rounded bg-primary text-white text-sm">
-                  <ion-icon name="filter"></ion-icon>
-                </button>
-              </template>
-              <template #content>
-                 <DropdownItem
-                  v-for="category in (filterCategory.categories ? filterCategory.categories : filterCategory)"
-                  :key="category"
-                  @click="applyFilter(column, category)"
-                >
-                 {{ category.name }}
-                </DropdownItem>
-              </template>
-            </Dropdown>
+          <Dropdown :contentClasses="'py-1 bg-white dark:bg-gray-800'">
+            <template #trigger>
+              <button class="px-2 py-2 rounded bg-primary text-white text-sm">
+                <ion-icon name="filter"></ion-icon>
+              </button>
+            </template>
+            <template #content>
+                <DropdownItem
+                v-for="category in (filterCategory.categories ? filterCategory.categories : filterCategory)"
+                :key="category"
+                @click="applyFilter(column, category)"
+              >
+                {{ category.name }}
+              </DropdownItem>
+            </template>
+          </Dropdown>
         </div>
       </div>
     </div>
@@ -53,11 +53,11 @@
             v-if="displayedData.length > 0"
             v-for="item in displayedData"
             :key="item.id"
-            class="bg-white dark:bg-gray-800 cursor-pointer mt-4"
+            class="bg-white dark:bg-gray-800 cursor-pointer my-2"
             :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"
             @click="selectItem(item)"
         >
-          <component :is="itemComponent" :item="item"/>
+          <component :is="itemComponent" :item="item" :class="{ 'bg-gray-300 dark:bg-gray-600': isSelected(item) }"/> 
           <hr v-if="showDivider" class="border-t border-gray-300 dark:border-gray-700" />
         </div>
       <div v-else class="text-center text-gray-500 dark:text-gray-400">
@@ -292,45 +292,52 @@ const nextPage = () => {
 };
 
 const goToPage = (page) => {
-    internalCurrentPage.value = page;
-     emit('update:currentPage', internalCurrentPage.value)
+  internalCurrentPage.value = page;
+    emit('update:currentPage', internalCurrentPage.value)
 };
 
 
 watch(() => props.searchQuery, (newVal) => {
-    internalSearchQuery.value = newVal;
-    internalCurrentPage.value = 1; // Reset page on search
-    debouncedFetchData();
+  internalSearchQuery.value = newVal;
+  internalCurrentPage.value = 1; // Reset page on search
+  debouncedFetchData();
 });
 
 watch(() => props.currentPage, (newVal) => {
   internalCurrentPage.value = newVal
-    debouncedFetchData();
+  debouncedFetchData();
 });
 
 watch(() => props.activeFilters, (newVal) => {
   internalActiveFilters.value = newVal
-   internalCurrentPage.value = 1;
-    debouncedFetchData();
+  internalCurrentPage.value = 1;
+  debouncedFetchData();
 }, { deep: true });
 
 watch(internalCurrentPage, debouncedFetchData);
 
 watch(internalSearchQuery, () => {
-   emit('update:searchQuery', internalSearchQuery.value)
+  emit('update:searchQuery', internalSearchQuery.value)
 });
 
 
 const selectItem = (item) => {
-    if (props.selectedItem === item) {
-        emit('update:selectedItem', null);
-    } else {
-        emit('update:selectedItem', item);
-    }
+  if (props.selectedItem === item) {
+    emit('update:selectedItem', null);
+  } else {
+    emit('update:selectedItem', item);
+  }
 };
 
 const isSelected = (item) => {
-    return props.selectedItem && props.selectedItem.id === item.id;
+  return props.selectedItem && props.selectedItem.id === item.id;
 };
 
+const refetch = async () => {
+  await debouncedFetchData();
+}
+
+defineExpose({
+  refetch
+})
 </script>
