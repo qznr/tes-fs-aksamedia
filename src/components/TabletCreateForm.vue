@@ -33,15 +33,14 @@
             <input
               type="text"
               id="name"
-              :value="form.name"
-              @input="updateField('name', $event.target.value)"
+              v-model="form.name"
               placeholder="John Doe"
               class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
         <div>
           <label for="phone" class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">Phone</label>
-          <input type="tel" id="phone" :value="form.phone" @input="updateField('phone', $event.target.value)" placeholder="123-456-7890" class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" />
+          <input type="tel" id="phone" v-model="form.phone" placeholder="123-456-7890" class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600" />
         </div>
           <div>
             <label
@@ -51,8 +50,7 @@
             >
             <select
               id="division"
-              :value="form.division || defaultDivisionId"
-               @input="updateField('division', $event.target.value)"
+              v-model="form.division"
               class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
             >
               <option
@@ -73,8 +71,7 @@
           <input
             type="text"
             id="position"
-            :value="form.position"
-            @input="updateField('position', $event.target.value)"
+            v-model="form.position"
             placeholder="Software Engineer"
             class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
           />
@@ -90,6 +87,7 @@
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue';
 import CreateForm from './common/CreateForm.vue';
+import { ref } from 'vue';
 
 const props = defineProps({
     divisionOptions: {
@@ -101,15 +99,13 @@ const props = defineProps({
 
 const emit = defineEmits(['create']);
 
-const defaultDivisionId = computed(() => props.divisionOptions[0]?.id || '');
-
-const employeeFormInitialState = {
+const employeeFormInitialState = ref({
   image: null,
   name: '',
   phone: '',
   division: props.divisionOptions[0]?.id || null,
   position: '',
-};
+});
 
 const handleImageChange = (event, updateField) => {
     const file = event.target.files[0];

@@ -314,8 +314,7 @@ const createEmployee = async (newEmployee) => {
 
     try {
       const response = await apiService.createEmployee(formData);
-      const createdEmployee = response.data.employee;
-      sharedState.selectedItem = createdEmployee;
+      sharedState.selectedItem = newEmployee;
         if (isMobile.value && mobileStackedList.value) {
           mobileStackedList.value.refetch();
         } else if (isTablet.value && tabletStackedList.value) {
