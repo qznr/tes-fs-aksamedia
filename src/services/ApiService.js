@@ -4,7 +4,7 @@ import { useLocalStorage } from './localStorageService';
 const { getItem } = useLocalStorage();
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api', // Default to Laravel's default
+  baseURL: import.meta.env.VITE_API_BASE_URL + '/api',
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
