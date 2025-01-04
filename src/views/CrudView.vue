@@ -35,7 +35,6 @@
                 @update:searchQuery="setSharedSearchQuery"
                 @update:activeFilters="setSharedActiveFilters"
                 @update:currentPage="setSharedCurrentPage"
-                :pageSize="sharedPageSize"
                 :selectedItem="sharedSelectedItem"
                 @update:selectedItem="setSharedSelectedItem"
               />
@@ -72,14 +71,13 @@
                 :searchable="true"
                 :searchColumns="['name']"
                 :filterable="true"
-                :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
+               :filterCategories="{ 'division': divisions.map(division => ({ id: division.id, name: division.name })) }"
                 :searchQuery="sharedSearchQuery"
                 :activeFilters="sharedActiveFilters"
                 :currentPage="sharedCurrentPage"
-                @update:searchQuery="setSharedSearchQuery"
+                 @update:searchQuery="setSharedSearchQuery"
                 @update:activeFilters="setSharedActiveFilters"
                 @update:currentPage="setSharedCurrentPage"
-                :pageSize="sharedPageSize"
                 :selectedItem="sharedSelectedItem"
                 @update:selectedItem="setSharedSelectedItem"
               />
@@ -126,7 +124,7 @@
               >
                 <template #image="{ item }">
                   <img
-                    :src="item.image"
+                    :src="formatImageUrl(item.image)"
                     alt="Employee Image"
                     class="w-10 h-10 rounded-full"
                   />
@@ -292,14 +290,13 @@ const createEmployee = async (newEmployee) => {
     }
     formData.append('name', newEmployee.name);
     formData.append('phone', newEmployee.phone);
-    formData.append('division_id', newEmployee.division);
+    formData.append('division', newEmployee.division);
     formData.append('position', newEmployee.position);
 
 
   try {
     const response = await apiService.createEmployee(formData);
       const createdEmployee = response.data.employee;
-      console.log(response)
       sharedState.selectedItem = createdEmployee;
   } catch (error) {
     console.error('Error creating employee:', error);
@@ -348,4 +345,12 @@ const filterCategories = computed(() => {
     position: divisionOptions.value
   }
 })
+
+
+const formatImageUrl = (imageUrl) => {
+    if (imageUrl && imageUrl.startsWith('/storage')) {
+        return `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    }
+    return imageUrl;
+};
 </script>
