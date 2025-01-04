@@ -1,11 +1,11 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useLocalStorage } from './localStorageService';
 import apiService from './apiService';
 import { useRouter } from 'vue-router';
 
 export const useAuth = () => {
     const { setItem, getItem, removeItem } = useLocalStorage();
-    const isAuthenticated = ref(!!getItem('token'));
+    const isAuthenticated = computed(() => !!getItem('token'));
     const router = useRouter();
 
     const login = async (username, password) => {
@@ -37,13 +37,13 @@ export const useAuth = () => {
             await apiService.logout(); // Call the logout API
         } catch (error) {
             console.error('Logout failed:', error);
-            // Handle logout error if necessary
         } finally {
-            // Clear local storage regardless of API call success
             removeItem('token');
             removeItem('user');
             isAuthenticated.value = false;
-            router.push('/');
+            router.push('/').then(() => {
+                window.location.reload();
+              });
         }
     };
 
