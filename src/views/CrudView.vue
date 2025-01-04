@@ -216,7 +216,7 @@ const fetchDivisions = async () => {
   try {
     const response = await apiService.getDivisions();
     divisions.value = response.data.divisions;
-    divisionOptions.value = divisions.value.map(division => division.name);
+    divisionOptions.value = divisions.value.map(division => ({id: division.id, name: division.name}));
   } catch (error) {
     console.error('Error fetching divisions:', error);
   }
@@ -283,49 +283,49 @@ const getEmployees = async (params) => {
     }
 };
 
-const createEmployee = (newEmployee) => {
-  console.log('Creating employee:', newEmployee);
+const createEmployee = async (newEmployee) => {
+    console.log('Creating employee:', newEmployee);
+    const formData = new FormData();
 
-  // Find the division object based on the division name
-  const division = divisions.value.find(div => div.name === newEmployee.division.name);
-  if (division) {
-    newEmployee.division_id = division.id; // Set the division_id
-    // Remove the division object as it's not needed for the backend
-    delete newEmployee.division;
-  }
+    if (newEmployee.image) {
+        formData.append('image', newEmployee.image);
+    }
+    formData.append('name', newEmployee.name);
+    formData.append('phone', newEmployee.phone);
+    formData.append('division_id', newEmployee.division);
+    formData.append('position', newEmployee.position);
 
-  apiService.createEmployee(newEmployee)
-    .then(response => {
-      // Assuming the API returns the created employee with an ID
+
+  try {
+    const response = await apiService.createEmployee(formData);
       const createdEmployee = response.data.employee;
+      console.log(response)
       sharedState.selectedItem = createdEmployee;
-    })
-    .catch(error => {
-      console.error('Error creating employee:', error);
-      // Handle error appropriately
-    });
+  } catch (error) {
+    console.error('Error creating employee:', error);
+  }
 };
 
-const updateEmployee = (updatedEmployee) => {
+const updateEmployee = async (updatedEmployee) => {
   console.log('Updating employee:', updatedEmployee);
 
-  // Find the division object based on the division name
-  const division = divisions.value.find(div => div.name === updatedEmployee.division.name);
-  if (division) {
-    updatedEmployee.division_id = division.id; // Set the division_id
-    // Remove the division object as it's not needed for the backend
-    delete updatedEmployee.division;
+  const formData = new FormData();
+  if (updatedEmployee.image) {
+      formData.append('image', updatedEmployee.image);
   }
+    formData.append('name', updatedEmployee.name);
+    formData.append('phone', updatedEmployee.phone);
+    formData.append('division', updatedEmployee.division);
+    formData.append('position', updatedEmployee.position);
 
-  apiService.updateEmployee(updatedEmployee.id, updatedEmployee)
-    .then(response => {
+    try {
+        const response = await apiService.updateEmployee(updatedEmployee.id, formData);
         sharedState.selectedItem = response.data.employee;
-    })
-    .catch(error => {
-      console.error('Error updating employee:', error);
-      // Handle error appropriately
-    });
+    } catch (error) {
+        console.error('Error updating employee:', error);
+    }
 };
+
 
 const deleteEmployee = (employeeId) => {
   console.log('Deleting employee with ID:', employeeId);

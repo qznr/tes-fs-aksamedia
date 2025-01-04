@@ -1,3 +1,6 @@
+================
+File: src/components/DesktopCreateForm.vue
+================
 <template>
   <CreateForm
     :initialFormState="employeeFormInitialState"
@@ -11,17 +14,16 @@
       <!-- Desktop Form Fields -->
       <div class="grid grid-cols-2 gap-4">
           <div>
-            <label
+             <label
               for="image"
               class="block mb-1 text-sm font-medium text-gray-900 dark:text-white"
-              >Image URL</label
+              >Image</label
             >
             <input
-              type="text"
+              type="file"
               id="image"
-              :value="form.image"
-              @input="updateField('image', $event.target.value)"
-              placeholder="https://i.pravatar.cc/100"
+              @change="handleImageChange($event, updateField)"
+              accept="image/*"
               class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
@@ -63,15 +65,15 @@
             >
             <select
               id="division"
-              :value="form.division.name"
-              @input="updateField('division.name', $event.target.value)"
+              :value="form.division"
+               @input="updateField('division', $event.target.value)"
               class="w-full px-3 py-2 text-gray-700 dark:text-gray-200 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
             >
               <option
                 v-for="division in divisionOptions"
-                :key="division"
-                :value="division"
-                >{{ division }}</option
+                :key="division.id"
+                :value="division.id"
+                >{{ division.name }}</option
               >
             </select>
           </div>
@@ -100,28 +102,30 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
 import CreateForm from './common/CreateForm.vue';
 
 const props = defineProps({
     divisionOptions: {
         type: Array,
-        required: true
+        required: true,
+        default: () => []
     }
 })
 
 const emit = defineEmits(['create']);
 
 const employeeFormInitialState = {
-  id: Date.now(),
-  image: '',
+  image: null,
   name: '',
   phone: '',
-  division: {
-    id: Date.now(),
-    name: props.divisionOptions[0],
-  },
+  division: props.divisionOptions[0]?.id || null,
   position: '',
+};
+
+const handleImageChange = (event, updateField) => {
+    const file = event.target.files[0];
+    updateField('image', file);
 };
 
 const handleCreate = (formData) => {
